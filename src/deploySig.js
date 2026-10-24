@@ -39,7 +39,11 @@ export function signPrep(keyHex, info) {
  * @param {DeployData} info
  */
 export function serialize(info) {
-  const { term, timestamp, phloPrice, phloLimit, validAfterBlockNumber } = info;
+  // `shardId` is field 11 of DeployDataProto and it is *part of the signed bytes*: a node
+  // verifies the signature over the deploy data it reconstructs, which includes the shard,
+  // and its own check compares the deploy's shard against the node's (`/testnet`, `/playground`).
+  // Omitting it signs a shorter message than the node checks and names no shard at all.
+  const { term, timestamp, phloPrice, phloLimit, validAfterBlockNumber, shardId } = info;
 
   // Serialize payload with protobuf
   const writer = new jspb.BinaryWriter();
@@ -54,6 +58,7 @@ export function serialize(info) {
   writeInt64(7, phloPrice);
   writeInt64(8, phloLimit);
   writeInt64(10, validAfterBlockNumber);
+  writeString(11, shardId);
   return writer.getResultBuffer();
 }
 
@@ -64,7 +69,11 @@ export function serialize(info) {
  * @typedef {import('./rnode-openapi-schema').DeployRequest} DeployRequest
  */
 export function sign(keyHex, info) {
-  const { term, timestamp, phloPrice, phloLimit, validAfterBlockNumber } = info;
+  // `shardId` is field 11 of DeployDataProto and it is *part of the signed bytes*: a node
+  // verifies the signature over the deploy data it reconstructs, which includes the shard,
+  // and its own check compares the deploy's shard against the node's (`/testnet`, `/playground`).
+  // Omitting it signs a shorter message than the node checks and names no shard at all.
+  const { term, timestamp, phloPrice, phloLimit, validAfterBlockNumber, shardId } = info;
   const { deployer, signature } = signPrep(keyHex, info);
 
   return {
